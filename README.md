@@ -21,6 +21,10 @@ _O(n)_, as are set operations like intersection, union and difference.
 [rust-shed](https://github.com/facebookexperimental/rust-shed). See the
 rust-shed repository for more documentation, including the contributing guide.
 
+This is a copy of the original `sorted_vector_map` crate, but with some
+modifications to make it work with an other project [ngram-trie](https://github.com/behappiness/ngram-trie).
+It is serializable and deserializable, also some other capacity related methods are added.
+
 ## License
 
 sorted_vector_map is both MIT and Apache License, Version 2.0 licensed, as found
