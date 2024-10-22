@@ -28,6 +28,7 @@ use std::slice::IterMut as VecIterMut;
 use itertools::Itertools;
 use quickcheck::Arbitrary;
 use quickcheck::Gen;
+use rayon::prelude::*;
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Hash, Serialize, Deserialize)]
 pub struct SortedVectorMap<K, V>(Vec<(K, V)>);
@@ -1051,6 +1052,47 @@ macro_rules! sorted_vector_map {
             map
         }
     };
+}
+
+impl<K, V> IntoParallelIterator for SortedVectorMap<K, V>
+where
+    K: Send,
+    V: Send,
+{
+    type Item = (K, V);
+    type Iter = rayon::vec::IntoIter<(K, V)>;
+
+    fn into_par_iter(self) -> Self::Iter {
+        self.0.into_par_iter()
+    }
+}
+
+// Implementing for &SortedVectorMap
+impl<'a, K, V> IntoParallelIterator for &'a SortedVectorMap<K, V>
+where
+    K: Sync,
+    V: Sync,
+{
+    type Item = (&'a K, &'a V);
+    type Iter = rayon::iter::Map<rayon::slice::Iter<'a, (K, V)>, fn(&'a (K, V)) -> (&'a K, &'a V)>;
+
+    fn into_par_iter(self) -> Self::Iter {
+        self.0.par_iter().map(|&(ref k, ref v)| (k, v))
+    }
+}
+
+// Implementing for &mut SortedVectorMap
+impl<'a, K, V> IntoParallelIterator for &'a mut SortedVectorMap<K, V>
+where
+    K: Send + Sync,
+    V: Send + Sync,
+{
+    type Item = (&'a K, &'a mut V);
+    type Iter = rayon::iter::Map<rayon::slice::IterMut<'a, (K, V)>, fn(&'a mut (K, V)) -> (&'a K, &'a mut V)>;
+
+    fn into_par_iter(self) -> Self::Iter {
+        self.0.par_iter_mut().map(|&mut (ref k, ref mut v)| (k, v))
+    }
 }
 
 #[cfg(test)]
